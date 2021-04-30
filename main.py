@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from flask import Flask, request, send_file, jsonify, render_template
 from metadata import MetadataDict, Metadata
-import  mysql.connector
+import mysql.connector
 
 
 # database
@@ -27,12 +27,8 @@ app = Flask(__name__)
 
 
 # services
-@app.route('/home', methods = [])
-def home():
-
-
-@app.route('/home/<string:city>/', methods = [])
-def location(city):
+@app.route('/', methods = [])
+def data_request():
 
     mycursor.execute("SELECT * FROM {} WHERE location like {}".format(TABLE, city))
     myresult = mycursor.fetchall()
@@ -40,7 +36,7 @@ def location(city):
     # for x in myresult:
     #     print(x)
 
-    return render_template("location.html", data = data)
+    return 
 
 
 # main
