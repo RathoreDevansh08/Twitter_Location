@@ -1,5 +1,6 @@
 # imports
 import os
+import logging
 import pandas as pd
 from flask import Flask, request, send_file, jsonify, render_template
 from metadata import MetadataDict, Metadata
@@ -26,6 +27,8 @@ mycursor = mydb.cursor()
 DATABASE = "sample_db"
 TABLE = "Tweet_data"
 
+logging.info("Database Connection Established.")
+
 
 # server
 HOST = '127.0.0.1'
@@ -37,6 +40,8 @@ app = Flask(__name__)
 # services - to return required food data dictionary
 @app.route('/')
 def data_request():
+
+    logging.info("Received Request.")
 
     food = {}
     food["data"] = {}
@@ -75,6 +80,8 @@ def data_request():
     # creating json object to return
     resp = jsonify(food)
     resp.status_code = 200
+
+    logging.info("Response Generated.")
     return resp
 
 
