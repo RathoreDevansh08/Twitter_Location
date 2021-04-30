@@ -42,6 +42,7 @@ def location(city):
 
     return render_template("location.html", data = data)
 
+
 # main
 if __name__ == '__main__':
-    app.run(host=HOST, port=PORT)
+    app.run(host = HOST, port = PORT)
