@@ -7,6 +7,10 @@ from metadata import MetadataDict, Metadata
 import mysql.connector
 
 
+# logger
+logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(message)s')
+
+
 # database
 """
     host = "sql129.main-hosting.eu",
@@ -26,8 +30,6 @@ mycursor = mydb.cursor()
 
 DATABASE = "sample_db"
 TABLE = "Tweet_data"
-
-logging.info("Database Connection Established.")
 
 
 # server
@@ -87,4 +89,5 @@ def data_request():
 
 # main
 if __name__ == '__main__':
+
     app.run(host = HOST, port = PORT)
