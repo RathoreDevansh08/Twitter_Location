@@ -72,7 +72,10 @@ def data_request():
         loc_details["tweets"] = tweet_list
         food["data"][loc_name] = loc_details
 
-    return food
+    # creating json object to return
+    resp = jsonify(food)
+    resp.status_code = 200
+    return resp
 
 
 # main
