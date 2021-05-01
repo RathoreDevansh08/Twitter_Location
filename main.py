@@ -85,9 +85,23 @@ def data_request():
     resp.status_code = 200
 
     mycursor.close()
-    
+
     logging.info("Response Generated.")
     return resp
+
+
+#services - ping check
+@app.route('/health')
+@cross_origin()
+def ping_check():
+
+    null_dict = {}
+
+    # creating empty response with status code 200 to return for health check
+    resp_chk = jsonify(null_dict)
+    resp_chk.status_code = 200
+
+    return resp_chk;
 
 
 # main
