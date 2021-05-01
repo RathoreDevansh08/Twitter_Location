@@ -28,9 +28,6 @@ mydb = mysql.connector.connect(
 
 )
 
-
-mycursor = mydb.cursor()
-
 DATABASE = "covid_help"
 TABLE = "Tweet_data"
 
@@ -45,13 +42,12 @@ app = Flask(__name__)
 # services - to return required food data dictionary
 @app.route('/')
 def data_request():
-
     logging.info("Received Request.")
-
     food = {}
     food["data"] = {}
 
     # fetching distinct locations from table in database
+    mycursor = mydb.cursor()
     mycursor.execute("SELECT DISTINCT location FROM {}".format(TABLE))
     locations = mycursor.fetchall()
 
@@ -86,6 +82,8 @@ def data_request():
     resp = jsonify(food)
     resp.status_code = 200
 
+    mycursor.close()
+    
     logging.info("Response Generated.")
     return resp
 
