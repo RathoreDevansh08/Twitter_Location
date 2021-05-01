@@ -1,7 +1,6 @@
 # imports
 import os
 import logging
-import pandas as pd
 from flask import Flask, request, send_file, jsonify, render_template
 #from metadata import MetadataDict, Metadata
 from flask_cors import CORS, cross_origin
