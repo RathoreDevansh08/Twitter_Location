@@ -21,20 +21,17 @@ logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(mes
 
 mydb = mysql.connector.connect(
 
-    host = "sql129.main-hosting.eu",
-
-    user = "u291509283_cargill",
-
-    password = "Cargill123",
-
-    database = "u291509283_cargill"
+    host = "13.234.203.121",
+    user = "covid_help",
+    password = "covid_help",
+    database = "covid_help"
 
 )
 
 
 mycursor = mydb.cursor()
 
-DATABASE = "sample_db"
+DATABASE = "covid_help"
 TABLE = "Tweet_data"
 
 
