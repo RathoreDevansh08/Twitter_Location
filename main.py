@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 from flask import Flask, request, send_file, jsonify, render_template
 #from metadata import MetadataDict, Metadata
+from flask_cors import CORS, cross_origin
 import mysql.connector
 
 
@@ -37,10 +38,11 @@ HOST = '0.0.0.0'
 PORT = '5000'
 
 app = Flask(__name__)
-
+CORS(app, support_credentials=True)
 
 # services - to return required food data dictionary
 @app.route('/')
+@cross_origin()
 def data_request():
     logging.info("Received Request.")
     food = {}
