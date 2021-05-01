@@ -20,15 +20,6 @@ logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(mes
     database = "u291509283_cargill"
 """
 
-mydb = mysql.connector.connect(
-
-    host = "13.234.203.121",
-    user = "covid_help",
-    password = "covid_help",
-    database = "covid_help"
-
-)
-
 DATABASE = "covid_help"
 TABLE = "Tweet_data"
 
@@ -47,7 +38,12 @@ def data_request():
     logging.info("Received Request.")
     food = {}
     food["data"] = {}
-
+    mydb = mysql.connector.connect(
+        host = "13.234.203.121",
+        user = "covid_help",
+        password = "covid_help",
+        database = "covid_help"
+    )
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
     mycursor.execute("SELECT DISTINCT location FROM {}".format(TABLE))
