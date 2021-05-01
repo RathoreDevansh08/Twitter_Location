@@ -3,7 +3,7 @@ import os
 import logging
 import pandas as pd
 from flask import Flask, request, send_file, jsonify, render_template
-from metadata import MetadataDict, Metadata
+#from metadata import MetadataDict, Metadata
 import mysql.connector
 
 
@@ -20,11 +20,17 @@ logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(mes
 """
 
 mydb = mysql.connector.connect(
-    host = "localhost",
-    user = "carg",
-    password = "pwd",
-    database = "sample_db"
+
+    host = "sql129.main-hosting.eu",
+
+    user = "u291509283_cargill",
+
+    password = "Cargill123",
+
+    database = "u291509283_cargill"
+
 )
+
 
 mycursor = mydb.cursor()
 
@@ -33,7 +39,7 @@ TABLE = "Tweet_data"
 
 
 # server
-HOST = '127.0.0.1'
+HOST = '0.0.0.0'
 PORT = '5000'
 
 app = Flask(__name__)

@@ -1,5 +1,5 @@
 FROM nikolaik/python-nodejs:python3.8-nodejs16
-
+EXPOSE 5000
 COPY . /app
 RUN pip3 install -r /app/requirements.txt
 
