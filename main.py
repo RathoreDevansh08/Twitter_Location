@@ -39,15 +39,19 @@ CORS(app)
 @app.route('/')
 @cross_origin()
 def data_request():
+
     logging.info("Received Request.")
+
     food = {}
     food["data"] = {}
+
     mydb = mysql.connector.connect(
         host = "sql129.main-hosting.eu",
         user = "u291509283_cargill",
         password = "Cargill123",
         database = "u291509283_cargill"
     )
+
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
     mycursor.execute("select * from {} order by Tweet_location,time".format(TABLE))
@@ -77,9 +81,7 @@ def data_request():
     food["data"] = locations
 
     # creating json object to return
-
     resp = jsonify(food)
-
     resp.status_code = 200
 
     mycursor.close()
@@ -88,10 +90,13 @@ def data_request():
 
     return resp
 
-#services - ping check
+
+# services - ping check
 @app.route('/health')
 @cross_origin()
 def ping_check():
+
+    logging.info("Ping Check Request Received.")
 
     null_dict = {}
 
@@ -100,6 +105,45 @@ def ping_check():
     resp_chk.status_code = 200
 
     return resp_chk;
+
+
+# services - disctinct tweet locations
+@app.route('/tweet_locations')
+@cross_origin()
+def tweet_locations():
+
+    logging.info("Distinct Tweet Locations Requested.")
+
+    mydb = mysql.connector.connect(
+        host = "sql129.main-hosting.eu",
+        user = "u291509283_cargill",
+        password = "Cargill123",
+        database = "u291509283_cargill"
+    )
+
+    # fetching distinct locations from table in database
+    mycursor = mydb.cursor()
+    mycursor.execute("select distinct Tweet_location from {} order by Tweet_location".format(TABLE))
+    rows = mycursor.fetchall
+
+    locations = {}
+    locations_list = []
+
+    for row in rows:
+        for (index, value) in enumerate(row):
+            locations_list.append(str(value))
+
+    locations["data"] = locations_list
+
+    # creating json object to return
+    resp = jsonify(locations)
+    resp.status_code = 200
+
+    mycursor.close()
+
+    logging.info("Response Generated.")
+
+    return resp
 
 
 # main
