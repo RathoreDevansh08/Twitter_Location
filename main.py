@@ -18,6 +18,11 @@ logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(mes
     password = "Cargill123",
     database = "u291509283_cargill"
 """
+# host = "13.234.203.121",
+# user = "covid_help",
+# password = "covid_help",
+# database = "covid_help"
+
 
 DATABASE = "covid_help"
 TABLE = "Tweet_data"
@@ -38,10 +43,10 @@ def data_request():
     food = {}
     food["data"] = {}
     mydb = mysql.connector.connect(
-        host = "13.234.203.121",
-        user = "covid_help",
-        password = "covid_help",
-        database = "covid_help"
+        host = "sql129.main-hosting.eu",
+        user = "u291509283_cargill",
+        password = "Cargill123",
+        database = "u291509283_cargill"
     )
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
