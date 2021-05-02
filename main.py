@@ -50,7 +50,7 @@ def data_request():
     )
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
-    mycursor.execute("SELECT DISTINCT location FROM {}".format(TABLE))
+    mycursor.execute("SELECT DISTINCT tweet_location FROM {}".format(TABLE))
     locations = mycursor.fetchall()
 
     # fetching field names from table in database
@@ -61,7 +61,7 @@ def data_request():
     for x in locations:
 
         # filtering data according to a particular location
-        mycursor.execute("SELECT * FROM {} WHERE location like \"{}\"".format(TABLE, str(x[0])))
+        mycursor.execute("SELECT * FROM {} WHERE tweet_location like \"{}\"".format(TABLE, str(x[0])))
         loc_data = mycursor.fetchall()
 
         loc_name = str(x[0])
