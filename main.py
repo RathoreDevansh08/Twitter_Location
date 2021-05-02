@@ -23,7 +23,9 @@ logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(mes
 # password = "covid_help",
 # database = "covid_help"
 
-
+HOSTNAME = "sql129.main-hosting.eu"
+USERNAME = "u291509283_cargill"
+PASSWORD = "Cargill123"
 DATABASE = "u291509283_cargill"
 TABLE = "Tweet_data"
 
@@ -34,6 +36,7 @@ PORT = '5000'
 
 app = Flask(__name__)
 CORS(app)
+
 
 # services - to return required food data dictionary
 @app.route('/')
@@ -46,15 +49,15 @@ def data_request():
     food["data"] = {}
 
     mydb = mysql.connector.connect(
-        host = "sql129.main-hosting.eu",
-        user = "u291509283_cargill",
-        password = "Cargill123",
-        database = "u291509283_cargill"
+        host = HOSTNAME,
+        user = USERNAME,
+        password = PASSWORD,
+        database = DATABASE
     )
 
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
-    mycursor.execute("select * from {} order by Tweet_location,time".format(TABLE))
+    mycursor.execute("select * from {} order by Tweet_location ASC,time DESC".format(TABLE))
 
     columns = mycursor.description
     locationColumnIndex = -1
@@ -115,10 +118,10 @@ def tweet_locations():
     logging.info("Distinct Tweet Locations Requested.")
 
     mydb = mysql.connector.connect(
-        host = "sql129.main-hosting.eu",
-        user = "u291509283_cargill",
-        password = "Cargill123",
-        database = "u291509283_cargill"
+        host = HOSTNAME,
+        user = USERNAME,
+        password = PASSWORD,
+        database = DATABASE
     )
 
     # fetching distinct locations from table in database
@@ -137,6 +140,53 @@ def tweet_locations():
 
     # creating json object to return
     resp = jsonify(locations)
+    resp.status_code = 200
+
+    mycursor.close()
+
+    logging.info("Response Generated.")
+
+    return resp
+
+
+# services - tweet by locations
+@app.route('/location_tweets', methods = ['GET'])
+@cross_origin()
+def location_tweets():
+
+    logging.info("Tweet Locations Requested.")
+
+    mydb = mysql.connector.connect(
+        host = HOSTNAME,
+        user = USERNAME,
+        password = PASSWORD,
+        database = DATABASE
+    )
+
+    loc_name = request.args.get('location')
+
+    # fetching distinct locations from table in database
+    mycursor = mydb.cursor()
+    mycursor.execute("select * from {} where Tweet_location like \"{}\" order by time DESC".format(TABLE, loc_name))
+    rows = mycursor.fetchall
+    columns = mycursor.description
+
+    col_list = []
+    for (index, column) in enumerate(columns):
+        col_list.append(str(column[0]))
+
+    food_loc = {}
+    loc_tweets = []
+    for row in rows:
+        twt = {}
+        for (index, value) in enumerate(row):
+            twt[col_list[index]] = str(value)
+        loc_tweets.append(twt)
+
+    food_loc["data"] = loc_tweets
+
+    # creating json object to return
+    resp = jsonify(food_loc)
     resp.status_code = 200
 
     mycursor.close()
