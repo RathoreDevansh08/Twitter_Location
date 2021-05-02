@@ -33,7 +33,7 @@ HOST = '0.0.0.0'
 PORT = '5000'
 
 app = Flask(__name__)
-CORS(app, support_credentials=True)
+CORS(app)
 
 # services - to return required food data dictionary
 @app.route('/')
@@ -50,45 +50,43 @@ def data_request():
     )
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
-    mycursor.execute("SELECT DISTINCT tweet_location FROM {}".format(TABLE))
-    locations = mycursor.fetchall()
+    mycursor.execute("select * from {} order by Tweet_location,time".format(TABLE))
 
-    # fetching field names from table in database
-    mycursor.execute("select COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA = \"{}\" and TABLE_NAME = \"{}\"".format(DATABASE, TABLE))
-    fields = mycursor.fetchall()
+    columns = mycursor.description
+    locationColumnIndex = -1
+    print(columns)
+    for (index, column) in enumerate(columns):
+        if column[0].lower()=="tweet_location".lower():
+            locationColumnIndex = index
+            break
 
-    # storing data location wise in disctionary format, iteratively
-    for x in locations:
+    rows = mycursor.fetchall()
 
-        # filtering data according to a particular location
-        mycursor.execute("SELECT * FROM {} WHERE tweet_location like \"{}\"".format(TABLE, str(x[0])))
-        loc_data = mycursor.fetchall()
+    locations = {}
+    print(locationColumnIndex)
+    for row in rows:
+        tweet = {}
+        for (index,value) in enumerate(row):
+            tweet[str(columns[index][0])] = str(value)
+        if row[locationColumnIndex] not in locations:
 
-        loc_name = str(x[0])
-        loc_details = {}
-        tweet_list = []
+            locations[str(row[locationColumnIndex])] = {"tweets":[]}
 
-        for rw in loc_data:
+        locations[str(row[locationColumnIndex])]["tweets"].append(tweet)
 
-            tweet_info = {}
-            for i in range(len(fields)):
-                tweet_info[str(fields[i][0])] = str(rw[i])
-
-            tweet_list.append(tweet_info)
-
-        # setting fields in output dictionary
-        loc_details["tweets"] = tweet_list
-        food["data"][loc_name] = loc_details
+    food["data"] = locations
 
     # creating json object to return
+
     resp = jsonify(food)
+
     resp.status_code = 200
 
     mycursor.close()
 
     logging.info("Response Generated.")
-    return resp
 
+    return resp
 
 #services - ping check
 @app.route('/health')
