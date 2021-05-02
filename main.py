@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(mes
 # database = "covid_help"
 
 
-DATABASE = "covid_help"
+DATABASE = "u291509283_cargill"
 TABLE = "Tweet_data"
 
 
