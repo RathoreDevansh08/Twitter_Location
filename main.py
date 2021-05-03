@@ -127,7 +127,7 @@ def tweet_locations():
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
     mycursor.execute("select distinct Tweet_location from {} order by Tweet_location".format(TABLE))
-    rows = mycursor.fetchall
+    rows = mycursor.fetchall()
 
     locations = {}
     locations_list = []
@@ -164,11 +164,12 @@ def location_tweets():
     )
 
     loc_name = request.args.get('location')
+    #loc_name = "bangalore"
 
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
     mycursor.execute("select * from {} where Tweet_location like \"{}\" order by time DESC".format(TABLE, loc_name))
-    rows = mycursor.fetchall
+    rows = mycursor.fetchall()
     columns = mycursor.description
 
     col_list = []
