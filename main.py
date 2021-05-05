@@ -57,7 +57,7 @@ def data_request():
 
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
-    mycursor.execute("select * from {} order by Tweet_location ASC,tweet_type as ,verified desc, time DESC".format(TABLE))
+    mycursor.execute("select * from {} order by Tweet_location ASC,tweet_type asc ,verified desc, time DESC".format(TABLE))
 
     columns = mycursor.description
     locationColumnIndex = -1
