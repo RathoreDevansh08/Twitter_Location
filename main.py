@@ -196,6 +196,13 @@ def location_tweets():
 
     return resp
 
+# services - tweet by locations
+@app.route('/search', methods = ['GET'])
+@cross_origin()
+def search():
+    return data_request()
+
+
 
 # main
 if __name__ == '__main__':
