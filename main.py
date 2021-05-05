@@ -200,6 +200,8 @@ def location_tweets():
 @app.route('/search', methods = ['GET'])
 @cross_origin()
 def search():
+    text = request.args.get('text')
+    logging.info("Text found: ", text)
     return data_request()
 
 
