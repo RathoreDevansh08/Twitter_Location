@@ -57,7 +57,7 @@ def data_request():
 
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
-    mycursor.execute("select * from {} order by Tweet_location ASC,tweet_type desc,verified desc, time DESC".format(TABLE))
+    mycursor.execute("select * from {} order by Tweet_location ASC,tweet_type as ,verified desc, time DESC".format(TABLE))
 
     columns = mycursor.description
     locationColumnIndex = -1
@@ -168,7 +168,7 @@ def location_tweets():
 
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
-    mycursor.execute("select * from {} where Tweet_location like \"{}\" order by tweet_type desc,verified desc, time DESC".format(TABLE, loc_name))
+    mycursor.execute("select * from {} where Tweet_location like \"{}\" order by tweet_type asc,verified desc, time DESC".format(TABLE, loc_name))
     rows = mycursor.fetchall()
     columns = mycursor.description
 
