@@ -1,11 +1,7 @@
-# imports
-import os
 import logging
-from flask import Flask, request, send_file, jsonify, render_template
-#from metadata import MetadataDict, Metadata
+from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-import mysql.connector
-
+from functions import *
 
 # logger
 logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(message)s')
@@ -18,18 +14,6 @@ logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(mes
     password = "Cargill123",
     database = "u291509283_cargill"
 """
-# host = "13.234.203.121",
-# user = "covid_help",
-# password = "covid_help",
-# database = "covid_help"
-
-HOSTNAME = "sql129.main-hosting.eu"
-USERNAME = "u291509283_cargill"
-PASSWORD = "Cargill123"
-DATABASE = "u291509283_cargill"
-TABLE = "Tweet_data"
-
-
 # server
 HOST = '0.0.0.0'
 PORT = '5000'
@@ -48,12 +32,7 @@ def data_request():
     food = {}
     food["data"] = {}
 
-    mydb = mysql.connector.connect(
-        host = HOSTNAME,
-        user = USERNAME,
-        password = PASSWORD,
-        database = DATABASE
-    )
+    mydb = db_connection()
 
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
@@ -76,13 +55,10 @@ def data_request():
         for (index,value) in enumerate(row):
             tweet[str(columns[index][0])] = str(value)
         if row[locationColumnIndex] not in locations:
-
             locations[str(row[locationColumnIndex])] = {"tweets":[]}
-
         locations[str(row[locationColumnIndex])]["tweets"].append(tweet)
 
     food["data"] = locations
-
     # creating json object to return
     resp = jsonify(food)
     resp.status_code = 200
@@ -117,12 +93,7 @@ def tweet_locations():
 
     logging.info("Distinct Tweet Locations Requested.")
 
-    mydb = mysql.connector.connect(
-        host = HOSTNAME,
-        user = USERNAME,
-        password = PASSWORD,
-        database = DATABASE
-    )
+    mydb = db_connection()
 
     # fetching distinct locations from table in database
     mycursor = mydb.cursor()
@@ -156,12 +127,7 @@ def location_tweets():
 
     logging.info("Tweet Locations Requested.")
 
-    mydb = mysql.connector.connect(
-        host = HOSTNAME,
-        user = USERNAME,
-        password = PASSWORD,
-        database = DATABASE
-    )
+    mydb = db_connection()
 
     loc_name = request.args.get('location')
     #loc_name = "bangalore"
@@ -197,13 +163,46 @@ def location_tweets():
     return resp
 
 # services - tweet by locations
-@app.route('/search', methods = ['GET'])
+@app.route('/search', methods=['GET'])
 @cross_origin()
 def search():
     text = request.args.get('text')
-    logging.info("Text found: ", text)
-    return data_request()
+    df = search_tweet_as_df(text)
+    df = process_tweets(df)
+    tweets_response = tweet_df_to_location_response(df)
+    response = {"data": tweets_response}
+    resp = jsonify(response)
+    resp.status_code = 200
+    logging.info("Response Generated.")
+    return resp
 
+
+@app.route('/fetch_latest_tweets', methods=['GET'])
+@cross_origin()
+def fetch_latest_tweets():
+    password = request.args.get('password')
+    if password != "justdoit":
+        resp = jsonify({"Error": "Wrong Password"})
+        resp.status_code = 200
+        return resp
+
+    search_terms = ['home cooked food corona', 'home made food corona', 'home made food delivery',
+                    'home made food covid', 'home cooked food covid', 'home cooked food corona']
+    mydb = db_connection()
+    mycursor = mydb.cursor()
+    mycursor.execute("delete from "+TABLE+" where tweet_type='twitter'")
+    for text in search_terms:
+        df = search_tweet_as_df(text)
+        df = process_tweets(df)
+        for i, row in df.iterrows():
+            sql = "INSERT IGNORE INTO " + DATABASE + "." + TABLE + "(time,tweet_id,name,tweet,retweets,location,created,followers,is_user_verified,Urls,Tweet_location,tweet_type)"
+            sql += " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+            mycursor.execute(sql, tuple(row))
+    mydb.commit()
+    logging.info("Fetched Latest Tweets for: ", search_terms)
+    resp = jsonify(search_terms)
+    resp.status_code = 200
+    return resp
 
 
 # main
