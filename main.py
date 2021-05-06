@@ -2,7 +2,7 @@ import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from functions import *
-
+import pandas as pd
 # logger
 logging.basicConfig(level=logging.DEBUG, format='%(process)d-%(levelname)s-%(message)s')
 
@@ -167,7 +167,7 @@ def location_tweets():
 @cross_origin()
 def search():
     text = request.args.get('text')
-    df = search_tweet_as_df(text)
+    df = search_tweet_as_df(text, 300)
     df = process_tweets(df)
     tweets_response = tweet_df_to_location_response(df)
     response = {"data": tweets_response}
@@ -176,6 +176,13 @@ def search():
     logging.info("Response Generated.")
     return resp
 
+@app.route('/fetch_location_map', methods=['GET'])
+@cross_origin()
+def fetch_location_map():
+    update_location_map()
+    resp = jsonify(location_map)
+    resp.status_code = 200
+    return resp
 
 @app.route('/fetch_latest_tweets', methods=['GET'])
 @cross_origin()
@@ -187,25 +194,31 @@ def fetch_latest_tweets():
         return resp
 
     search_terms = ['home cooked food corona', 'home made food corona', 'home made food delivery',
-                    'home made food covid', 'home cooked food covid', 'home cooked food corona']
+                    'home cooked food covid', 'home made food covid', 'home cooked food delivery']
+    tweets_df= None
+    for text in search_terms:
+        df = search_tweet_as_df(text, 200)
+        df = process_tweets(df)
+        if tweets_df is None:
+            tweets_df = df
+        else:
+            tweets_df = pd.concat([tweets_df, df], ignore_index=True)
     mydb = db_connection()
     mycursor = mydb.cursor()
     mycursor.execute("delete from "+TABLE+" where tweet_type='twitter'")
-    for text in search_terms:
-        df = search_tweet_as_df(text)
-        df = process_tweets(df)
-        for i, row in df.iterrows():
-            sql = "INSERT IGNORE INTO " + DATABASE + "." + TABLE + "(time,tweet_id,name,tweet,retweets,location,created,followers,is_user_verified,Urls,Tweet_location,tweet_type)"
-            sql += " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-            mycursor.execute(sql, tuple(row))
+    for i, row in tweets_df.iterrows():
+        sql = "INSERT IGNORE INTO " + DATABASE + "." + TABLE + "(time,tweet_id,name,tweet,retweets,location,created,followers,is_user_verified,Urls,Tweet_location,tweet_type)"
+        sql += " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        mycursor.execute(sql, tuple(row))
     mydb.commit()
-    logging.info("Fetched Latest Tweets for: ", search_terms)
-    resp = jsonify(search_terms)
+    tweets_response = tweet_df_to_location_response(tweets_df)
+    response = {"data": tweets_response}
+    logging.info("Fetched Latest Tweets for: "+str(search_terms))
+    resp = jsonify(response)
     resp.status_code = 200
     return resp
 
 
 # main
 if __name__ == '__main__':
-
     app.run(host = HOST, port = PORT)

@@ -9,34 +9,62 @@ PASSWORD = "Cargill123"
 DATABASE = "u291509283_cargill"
 TABLE = "Tweet_data"
 
-
-def get_tweepy_api():
-    access_token = "2427460241-yihCbhCrkA6QrS7mhtwkK9FCnoKMvZzPNRFEtYr"
-    access_token_secret = "p6dTQRMwy0SxVP49oHLUXeJ1L4T2cDqPM4RNlcEPErJ9X"
-    consumer_key = "3nHkUhoqNif1x64w2gN7UxfPD"
-    consumer_secret = "SD0qR7yWtUdGDqYxPcUpyNsRcMsX5MJB9z4MxjVKyq6VYwvDp0"
-    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
-    api = tweepy.API(auth)
-    return api
+access_token = "2427460241-yihCbhCrkA6QrS7mhtwkK9FCnoKMvZzPNRFEtYr"
+access_token_secret = "p6dTQRMwy0SxVP49oHLUXeJ1L4T2cDqPM4RNlcEPErJ9X"
+consumer_key = "3nHkUhoqNif1x64w2gN7UxfPD"
+consumer_secret = "SD0qR7yWtUdGDqYxPcUpyNsRcMsX5MJB9z4MxjVKyq6VYwvDp0"
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
+api = tweepy.API(auth)
 
 
-def search_tweet(text):
+def db_connection():
+    global HOSTNAME, USERNAME, PASSWORD, DATABASE
+    return mysql.connector.connect(
+        host=HOSTNAME,
+        user=USERNAME,
+        password=PASSWORD,
+        database=DATABASE
+    )
+
+def get_location_map():
+    location_map = {}
+    mydb = db_connection()
+    mycursor = mydb.cursor()
+    mycursor.execute("select location_name,location_alias from location_mapping order by location_name ASC")
+    rows = mycursor.fetchall()
+    for row in rows:
+        location_map[row[0]] = row[1]
+    mycursor.close()
+    return location_map
+
+
+location_map = get_location_map()
+
+
+def update_location_map():
+    global location_map
+    location_map = get_location_map()
+
+
+def search_tweet(text, limit):
+    global api
     result = []
-    api = get_tweepy_api()
     search_str = text + " -filter:retweets"
-    for tweet in tweepy.Cursor(api.search, q=search_str, lang="en", result_type="recent",
-                               tweet_mode='extended').items():
-        tweet_details = {'time': str(tweet.created_at), 'tweet_id': tweet.id, 'name': tweet.user.screen_name,
-                         'tweet': tweet.full_text, 'retweets': tweet.retweet_count, 'location': None,
-                         'created': tweet.created_at.strftime("%d-%b-%Y"), 'followers': tweet.user.followers_count,
-                         'is_user_verified': tweet.user.verified}
-        result.append(tweet_details)
+    with no_ssl_verification():
+        for tweet in tweepy.Cursor(api.search, q=search_str, lang="en", count=limit+1, result_type="recent",
+                                   tweet_mode='extended').items(limit):
+            tweet_details = {'time': str(tweet.created_at), 'tweet_id': tweet.id, 'name': tweet.user.screen_name,
+                             'tweet': tweet.full_text, 'retweets': tweet.retweet_count, 'location': None,
+                             'created': tweet.created_at.strftime("%d-%b-%Y"), 'followers': tweet.user.followers_count,
+                             'is_user_verified': tweet.user.verified}
+            result.append(tweet_details)
     return result
 
 
-def search_tweet_as_df(text):
-    return pd.json_normalize(search_tweet(text))
+def search_tweet_as_df(text, limit):
+    tweets = search_tweet(text, limit)
+    return pd.json_normalize(tweets)
 
 
 def process_tweets(df):
@@ -66,28 +94,6 @@ def tweet_df_to_location_response(df):
     return tweets_response
 
 
-def db_connection():
-    global HOSTNAME, USERNAME, PASSWORD, DATABASE
-    return mysql.connector.connect(
-        host=HOSTNAME,
-        user=USERNAME,
-        password=PASSWORD,
-        database=DATABASE
-    )
-
-
-def get_location_map():
-    location_map = {}
-    mydb = db_connection()
-    mycursor = mydb.cursor()
-    mycursor.execute("select location_name,location_alias from location_mapping order by location_name ASC")
-    rows = mycursor.fetchall()
-    for row in rows:
-        location_map[row[0]] = row[1]
-    mycursor.close()
-    return location_map
-
-
 def deEmojify(text):
     regrex_pattern = re.compile(pattern="["
                                         u"\U0001F600-\U0001F64F"  # emoticons
@@ -101,8 +107,9 @@ def deEmojify(text):
 
 
 def extractLocation(tweet):
+    global location_map
     locations = set({})
-    for (name, alias) in get_location_map().items():
+    for (name, alias) in location_map.items():
         if name.lower() in tweet.lower():
             locations.add(alias)
     if len(locations) == 0:
@@ -120,3 +127,42 @@ def removeURLs(tweet):
     for url in urls:
         tweet = tweet.replace(url, " ")
     return tweet
+
+
+import warnings
+import contextlib
+import requests
+from urllib3.exceptions import InsecureRequestWarning
+
+old_merge_environment_settings = requests.Session.merge_environment_settings
+
+
+@contextlib.contextmanager
+def no_ssl_verification():
+    opened_adapters = set()
+
+    def merge_environment_settings(self, url, proxies, stream, verify, cert):
+        # Verification happens only once per connection so we need to close
+        # all the opened adapters once we're done. Otherwise, the effects of
+        # verify=False persist beyond the end of this context manager.
+        opened_adapters.add(self.get_adapter(url))
+
+        settings = old_merge_environment_settings(self, url, proxies, stream, verify, cert)
+        settings['verify'] = False
+
+        return settings
+
+    requests.Session.merge_environment_settings = merge_environment_settings
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', InsecureRequestWarning)
+            yield
+    finally:
+        requests.Session.merge_environment_settings = old_merge_environment_settings
+
+        for adapter in opened_adapters:
+            try:
+                adapter.close()
+            except:
+                pass
