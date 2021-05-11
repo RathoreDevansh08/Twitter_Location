@@ -55,7 +55,7 @@ def search_tweet(text, limit):
         for tweet in tweepy.Cursor(api.search, q=search_str, lang="en", count=limit+1, result_type="recent",
                                    tweet_mode='extended').items(limit):
             tweet_details = {'time': str(tweet.created_at), 'tweet_id': tweet.id, 'name': tweet.user.screen_name,
-                             'tweet': tweet.full_text, 'retweets': tweet.retweet_count, 'location': None,
+                             'tweet': tweet.full_text, 'retweets': tweet.retweet_count, 'location': '',
                              'created': tweet.created_at.strftime("%d-%b-%Y"), 'followers': tweet.user.followers_count,
                              'is_user_verified': tweet.user.verified}
             result.append(tweet_details)
@@ -68,7 +68,7 @@ def search_tweet_as_df(text, limit):
 
 
 def process_tweets(df):
-    df = df.where(pd.notnull(df), None)
+    df = df.where(pd.notnull(df), '')
     df["tweet"] = df.tweet.apply(lambda tweet: deEmojify(tweet))
     df["tweet_location"] = df.tweet.apply(lambda tweet: extractLocation(tweet))
     df["Urls"] = df.tweet.apply(lambda tweet: extractURLs(tweet))
@@ -76,8 +76,8 @@ def process_tweets(df):
     df["tweet_type"] = "twitter"
     # df["tweet"] = df.tweet.apply(lambda tweet: removeURLs(tweet))
     df = df.explode("tweet_location")
-    df = df.explode("Urls")
-    df = df.where(pd.notnull(df), None)
+    # df = df.explode("Urls")
+    df = df.where(pd.notnull(df), '')
     df = df.drop_duplicates()
     df = df[['time', 'tweet_id', 'name', 'tweet', 'retweets', 'location', 'created', 'followers', 'is_user_verified',
              'Urls', 'tweet_location', 'tweet_type']]
@@ -119,7 +119,7 @@ def extractLocation(tweet):
 
 def extractURLs(tweet):
     urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', tweet)
-    return urls
+    return ",".join(urls)
 
 
 def removeURLs(tweet):
